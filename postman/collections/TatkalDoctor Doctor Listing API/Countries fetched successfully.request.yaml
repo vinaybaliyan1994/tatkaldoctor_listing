@@ -1,0 +1,204 @@
+$kind: http-request
+url: "{{baseUrl}}/api/v1/countries"
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+  - key: X-Api-Key
+    value: <API Key>
+    description: "Added as a part of security scheme: apikey"
+auth:
+  type: apikey
+  credentials:
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    in: header
+scripts:
+  - type: beforeRequest
+    code: "const apiKey = pm.environment.get(\"API_KEY\");\r
+
+      const secret = pm.environment.get(\"API_SECRET\");\r
+
+      \r
+
+      // Timestamp in seconds\r
+
+      const timestamp = Math.floor(Date.now() / 1000).toString();\r
+
+      \r
+
+      // Parse request body\r
+
+      let payload = {};\r
+
+      \r
+
+      if (pm.request.body && pm.request.body.raw) {\r
+
+      \    payload = JSON.parse(pm.request.body.raw);\r
+
+      }\r
+
+      \r
+
+      // Inject timestamp\r
+
+      payload.timestamp = timestamp;\r
+
+      \r
+
+      // ===== CREATE PYTHON DICT STRING =====\r
+
+      // Convert JSON to Python dict-like string\r
+
+      \r
+
+      function toPythonDictString(obj) {\r
+
+      \    function convert(value) {\r
+
+      \        if (value === null) return 'None';\r
+
+      \        if (value === true) return 'True';\r
+
+      \        if (value === false) return 'False';\r
+
+      \r
+
+      \        if (typeof value === 'number') {\r
+
+      \            return String(value);\r
+
+      \        }\r
+
+      \r
+
+      \        if (typeof value === 'string') {\r
+
+      \            const hasSingle = value.includes(\"'\");\r
+
+      \            const hasDouble = value.includes('\"');\r
+
+      \r
+
+      \            if (hasSingle && !hasDouble) {\r
+
+      \                return `\"${value}\"`;\r
+
+      \            } else if (hasSingle && hasDouble) {\r
+
+      \                return \"'\" + value\r
+
+      \                    .replace(/\\\\/g, '\\\\\\\\')\r
+
+      \                    .replace(/'/g, \"\\\\'\") + \"'\";\r
+
+      \            } else {\r
+
+      \                return `'${value}'`;\r
+
+      \            }\r
+
+      \        }\r
+
+      \r
+
+      \        if (Array.isArray(value)) {\r
+
+      \            return '[' + value.map(convert).join(', ') + ']';\r
+
+      \        }\r
+
+      \r
+
+      \        if (typeof value === 'object') {\r
+
+      \            const entries = Object.keys(value).map(\r
+
+      \                key => `${convert(key)}: ${convert(value[key])}`\r
+
+      \            );\r
+
+      \r
+
+      \            return '{' + entries.join(', ') + '}';\r
+
+      \        }\r
+
+      \r
+
+      \        return String(value);\r
+
+      \    }\r
+
+      \r
+
+      \    return convert(obj);\r
+
+      }\r
+
+      \r
+
+      const message = toPythonDictString(payload);\r
+
+      \r
+
+      // ===== HMAC SHA256 =====\r
+
+      const signature = CryptoJS.HmacSHA256(\r
+
+      \    message,\r
+
+      \    secret\r
+
+      ).toString(CryptoJS.enc.Hex);\r
+
+      \r
+
+      // ===== UPDATE BODY =====\r
+
+      pm.request.body.raw = JSON.stringify(payload);\r
+
+      \r
+
+      // ===== HEADERS =====\r
+
+      pm.request.headers.upsert({\r
+
+      \    key: \"X-API-KEY\",\r
+
+      \    value: apiKey\r
+
+      });\r
+
+      \r
+
+      pm.request.headers.upsert({\r
+
+      \    key: \"X-SIGNATURE\",\r
+
+      \    value: signature\r
+
+      });\r
+
+      \r
+
+      pm.request.headers.upsert({\r
+
+      \    key: \"X-TIMESTAMP\",\r
+
+      \    value: timestamp\r
+
+      });\r
+
+      \r
+
+      pm.request.headers.upsert({\r
+
+      \    key: \"Content-Type\",\r
+
+      \    value: \"application/json\"\r
+
+      });\r\n"
+    language: text/javascript
+order: 2003816203420202

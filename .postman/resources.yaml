@@ -1,0 +1,11 @@
+# Use this workspace to collaborate
+workspace:
+  id: 750b9376-8d43-4bb2-8dc2-ec650c8f5054
+
+localResources:
+  specs:
+    - ..\storage\api-docs\api-docs.json
+
+cloudResources:
+  collections:
+    ..\postman\collections\TatkalDoctor Doctor Listing API: 7e8c47fb-3950-4748-b537-2aa3eb947450

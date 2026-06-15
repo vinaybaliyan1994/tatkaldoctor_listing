@@ -1,0 +1,18 @@
+$kind: http-request
+description: Returns all active locations for the given city ID, sorted A→Z. Requires HMAC authentication.
+url: "{{baseUrl}}/api/v1/locations/:city_id"
+method: GET
+headers:
+  Accept: application/json
+pathVariables:
+  - key: city_id
+    value: "1"
+    description: ID of the city (from /cities/{country_code})
+auth:
+  type: apikey
+  credentials:
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    in: header
+examples: ./.resources/List active locations by city.resources/examples
+order: 1000

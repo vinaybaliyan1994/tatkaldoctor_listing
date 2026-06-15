@@ -1,0 +1,14 @@
+$kind: http-request
+description: Returns all active medical qualifications sorted A→Z (e.g. MBBS, MD, BDS). Use qualification IDs to filter doctor listings. Requires HMAC authentication.
+url: "{{baseUrl}}/api/v1/qualifications"
+method: GET
+headers:
+  Accept: application/json
+auth:
+  type: apikey
+  credentials:
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    in: header
+examples: ./.resources/List active medical qualifications.resources/examples
+order: 1000

@@ -13,11 +13,13 @@ class Listing extends Model
     protected $fillable = [
         'uuid', 'category_id', 'country_code', 'master_city_id', 'master_location_id',
         'name', 'hospital_name', 'address', 'description',
-        'personal_contact_no', 'appointment_no',
+        'personal_contact_no', 'appointment_no', 'email',
         'qualifications', 'services', 'meta_data',
-        'latitude', 'longitude', 'average_rating', 'status',
+        'latitude', 'longitude', 'average_rating', 'status', 'source',
+        'is_imported', 'is_verified_by_tatkaldoctor', 'external_source', 'external_url',
         'verification_status', 'verified_at', 'verified_by', 'rejection_reason',
         'qr_slug', 'public_profile_url', 'qr_code_path', 'qr_generated_at',
+        'profile_photo_path',
     ];
 
     protected $casts = [
@@ -25,6 +27,8 @@ class Listing extends Model
         'services'            => 'array',
         'meta_data'           => 'array',
         'status'              => 'boolean',
+        'is_imported'         => 'boolean',
+        'is_verified_by_tatkaldoctor' => 'boolean',
         'average_rating'      => 'decimal:2',
         'latitude'            => 'decimal:7',
         'longitude'           => 'decimal:7',
@@ -64,6 +68,11 @@ class Listing extends Model
         return $this->hasMany(DoctorDocument::class);
     }
 
+    public function documents(): HasMany
+    {
+        return $this->hasMany(DoctorDocument::class, 'listing_id');
+    }
+
     public function auditLogs(): HasMany
     {
         return $this->hasMany(ListingAuditLog::class);
@@ -71,7 +80,38 @@ class Listing extends Model
 
     public function scopePublic(Builder $query): Builder
     {
-        return $query->where('status', true)->where('verification_status', 'approved');
+        return $query->where('status', true)
+            ->where(function (Builder $query): void {
+                $query->where('verification_status', 'approved')
+                    ->orWhere('is_imported', true);
+            });
+    }
+
+    public function scopeImported(Builder $query): Builder
+    {
+        return $query->where('is_imported', true);
+    }
+
+    public function isImported(): bool
+    {
+        return (bool) $this->is_imported;
+    }
+
+    public function isTatkalVerified(): bool
+    {
+        return ! $this->isImported()
+            && $this->verification_status === 'approved'
+            && (bool) $this->is_verified_by_tatkaldoctor;
+    }
+
+    public function bookingEnabled(): bool
+    {
+        return $this->isTatkalVerified();
+    }
+
+    public function doctorType(): string
+    {
+        return $this->isImported() ? 'imported' : 'verified';
     }
 
     public function getQualificationNamesAttribute(): array

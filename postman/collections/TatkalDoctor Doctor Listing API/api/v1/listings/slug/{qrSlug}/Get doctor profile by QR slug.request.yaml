@@ -1,0 +1,58 @@
+$kind: http-request
+name: Get doctor profile by QR slug
+description: Returns a full active, verified doctor profile by its QR slug. Used by public profile pages accessible via QR code scan. This route must be called **before** `/listings/{uuid}` to avoid parameter collision. Requires HMAC authentication.
+url: |-
+  {{baseUrl}}/api/v1/listings/slug/dr-ravi-kumar-d60fea83
+  ?api_key=f7714df9a413cd1ef9915ba8eac0d8a5&secret_key=7228f8d5feb060c18e9e2d605ad7be159dad24ce0f4c007260207e9d8635566b
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  api_key: f7714df9a413cd1ef9915ba8eac0d8a5
+  secret_key: 7228f8d5feb060c18e9e2d605ad7be159dad24ce0f4c007260207e9d8635566b
+auth:
+  type: apikey
+  credentials:
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    in: header
+scripts:
+  - type: beforeRequest
+    code: "const apiKey    = pm.collectionVariables.get('api_key');\r
+
+      const secretKey = pm.collectionVariables.get('secret_key');\r
+
+      \r
+
+      const method    = pm.request.method.toUpperCase();\r
+
+      const timestamp = Math.floor(Date.now() / 1000).toString();\r
+
+      const nonce     = Math.random().toString(36).substring(2) + Date.now().toString(36);\r
+
+      const path      = pm.request.url.getPath();\r
+
+      \r
+
+      const body     = (pm.request.body && pm.request.body.raw) ? pm.request.body.raw : '';\r
+
+      const bodyHash = CryptoJS.SHA256(body).toString(CryptoJS.enc.Hex);\r
+
+      \r
+
+      const stringToSign = [method, timestamp, nonce, path, bodyHash].join('\\n');\r
+
+      const signature    = CryptoJS.HmacSHA256(stringToSign, secretKey).toString(CryptoJS.enc.Hex);\r
+
+      \r
+
+      pm.request.headers.upsert({ key: 'X-Api-Key',   value: apiKey });\r
+
+      pm.request.headers.upsert({ key: 'X-Timestamp', value: timestamp });\r
+
+      pm.request.headers.upsert({ key: 'X-Nonce',     value: nonce });\r
+
+      pm.request.headers.upsert({ key: 'X-Signature', value: signature });\r\n"
+    language: text/javascript
+examples: ./.resources/Get doctor profile by QR slug.resources/examples
+order: 1000

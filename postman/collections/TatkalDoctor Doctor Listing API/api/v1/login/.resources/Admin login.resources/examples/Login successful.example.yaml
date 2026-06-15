@@ -1,0 +1,37 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/login"
+  method: POST
+  headers:
+    Content-Type: application/json
+    Accept: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "email": "superadmin@tatkaldoctor.com",
+        "password": "Admin@1234"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "message": "Login successful.",
+        "data": {
+          "user": {
+            "id": 1,
+            "name": "Super Admin",
+            "email": "superadmin@tatkaldoctor.com",
+            "role": "super_admin"
+          },
+          "token": "1|abcxyz...",
+          "token_type": "Bearer"
+        }
+      }
+order: 1000

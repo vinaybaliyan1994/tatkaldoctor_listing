@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'solution' => [
+        'api_url'    => env('SOLUTION_API_URL', env('SOLUTION_SYNC_URL', 'http://127.0.0.1:8001/api/v1')),
+        'service_token' => env('SOLUTION_SERVICE_TOKEN', ''),
+        'sync_url'   => env('SOLUTION_SYNC_URL', 'http://127.0.0.1:8001'),
+        'sync_token' => env('SOLUTION_SYNC_TOKEN', ''),
+    ],
+
 ];

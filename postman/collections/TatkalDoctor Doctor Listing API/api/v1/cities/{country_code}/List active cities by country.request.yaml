@@ -1,0 +1,18 @@
+$kind: http-request
+description: Returns all active cities for the given ISO alpha-3 country code, sorted A→Z. Requires HMAC authentication.
+url: "{{baseUrl}}/api/v1/cities/:country_code"
+method: GET
+headers:
+  Accept: application/json
+pathVariables:
+  - key: country_code
+    value: IND
+    description: ISO 3166-1 alpha-3 country code (case-insensitive, e.g. IND, USA, GBR)
+auth:
+  type: apikey
+  credentials:
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    in: header
+examples: ./.resources/List active cities by country.resources/examples
+order: 1000

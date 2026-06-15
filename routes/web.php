@@ -5,6 +5,7 @@ use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\Web\ClientController;
 use App\Http\Controllers\Web\ClientSubscriptionController;
 use App\Http\Controllers\Web\DoctorDocumentController;
+use App\Http\Controllers\Web\ImportedDoctorController;
 use App\Http\Controllers\Web\ListingAuditLogController;
 use App\Http\Controllers\Web\ListingController;
 use App\Http\Controllers\Web\MasterCityController;
@@ -81,6 +82,13 @@ Route::middleware('auth')->group(function () {
 
     // Super admin only
     Route::middleware('super_admin')->group(function () {
+        Route::get('imported-doctors/upload', [ImportedDoctorController::class, 'upload'])->name('imported-doctors.upload');
+        Route::post('imported-doctors/preview', [ImportedDoctorController::class, 'preview'])->name('imported-doctors.preview');
+        Route::post('imported-doctors/import', [ImportedDoctorController::class, 'import'])->name('imported-doctors.import');
+        Route::resource('imported-doctors', ImportedDoctorController::class)->parameters([
+            'imported-doctors' => 'importedDoctor',
+        ]);
+
         Route::resource('clients', ClientController::class)->except(['index', 'show']);
         Route::post('clients/{client}/regenerate-keys', [ClientController::class, 'regenerateKeys'])
              ->name('clients.regenerate-keys');

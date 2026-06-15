@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
+use Carbon\Carbon;
 
 class HmacAuthentication
 {
@@ -48,7 +49,13 @@ class HmacAuthentication
             return $this->unauthorized($request, $client, $apiKey, 'Client is inactive or outside availability period.');
         }
 
-        $rawBody      = $request->getContent();
+        $rateLimitResult = $this->checkRateLimit($client);
+        if ($rateLimitResult !== null) {
+            return $rateLimitResult;
+        }
+
+        $contentType  = $request->header('Content-Type', '');
+        $rawBody      = str_starts_with($contentType, 'multipart/') ? '' : $request->getContent();
         $bodyHash     = hash('sha256', $rawBody);
         $stringToSign = implode("\n", [
             strtoupper($request->method()),
@@ -79,6 +86,46 @@ class HmacAuthentication
         );
 
         return $response;
+    }
+
+    private function checkRateLimit(Client $client): ?Response
+    {
+        $activeSub = $client->activeSubscription();
+        if (! $activeSub) {
+            return null;
+        }
+
+        $plan = $activeSub->plan;
+        if (! $plan) {
+            return null;
+        }
+
+        // max_appointments is the monthly API request quota for this client plan
+        $maxRequests = $plan->max_appointments;
+        if ($maxRequests === null) {
+            return null; // no limit
+        }
+
+        $monthStart = Carbon::now()->startOfMonth()->toDateTimeString();
+        $cacheKey   = 'hmac_rate:' . $client->id . ':' . Carbon::now()->format('Y-m');
+
+        $count = Cache::remember($cacheKey, 60, fn () =>
+            ApiLog::where('client_id', $client->id)
+                ->where('created_at', '>=', $monthStart)
+                ->where('success', true)
+                ->count()
+        );
+
+        if ($count >= $maxRequests) {
+            $this->logRequest(request(), $client, $client->api_key, 429, false, 'Monthly request quota exceeded.');
+            return response()->json([
+                'success' => false,
+                'message' => 'Monthly API request quota exceeded. Please upgrade your plan.',
+                'quota'   => ['used' => $count, 'max' => $maxRequests],
+            ], 429);
+        }
+
+        return null;
     }
 
     private function unauthorized(Request $request, ?Client $client, ?string $apiKey, string $message): Response

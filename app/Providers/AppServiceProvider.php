@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Listing;
+use App\Observers\ListingObserver;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
@@ -21,5 +23,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
+        Listing::observe(ListingObserver::class);
     }
 }

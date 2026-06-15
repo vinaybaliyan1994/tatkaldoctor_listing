@@ -1,0 +1,78 @@
+$kind: collection
+name: TatkalDoctor Doctor Listing API
+description: |-
+  Core registry API for the TatkalDoctor ecosystem.
+
+  ## Authentication
+
+  ### Public Endpoints
+  `GET /api/v1/health` is public — no authentication required.
+
+  ### Admin Login (Sanctum)
+  Call `POST /api/v1/login` with email + password to receive a Bearer token.
+
+  ### HMAC-SHA256 (All Data Endpoints)
+  All master data and listing endpoints require four request headers:
+
+  | Header | Description |
+  |---|---|
+  | `X-Api-Key` | Client API key issued by super admin |
+  | `X-Timestamp` | Unix timestamp in seconds (UTC) |
+  | `X-Nonce` | Random string ≥ 8 chars, unique per request |
+  | `X-Signature` | HMAC-SHA256 hex-encoded signature |
+
+  **String to sign** (fields joined by `\n`):
+
+  ```
+  HTTP_METHOD
+  TIMESTAMP
+  NONCE
+  REQUEST_PATH
+  SHA256(body)
+  ```
+
+  > Timestamp must be within **±5 minutes** of server time. The `REQUEST_PATH` is the URL path only — no query string. For GET requests, `SHA256(body)` is the SHA-256 of an empty string.
+
+  Contact Support:
+   Name: TatkalDoctor Admin
+   Email: superadmin@tatkaldoctor.com
+variables:
+  baseUrl: http://127.0.0.1:8000
+  "": ""
+  api_key: ""
+  secret_key: ""
+scripts:
+  - type: http:beforeRequest
+    code: "const apiKey    = pm.collectionVariables.get('api_key');\r
+
+      const secretKey = pm.collectionVariables.get('secret_key');\r
+
+      \r
+
+      const method    = pm.request.method.toUpperCase();\r
+
+      const timestamp = Math.floor(Date.now() / 1000).toString();\r
+
+      const nonce     = Math.random().toString(36).substring(2) + Date.now().toString(36);\r
+
+      const path      = pm.request.url.getPath();\r
+
+      const body      = (pm.request.body && pm.request.body.raw) ? pm.request.body.raw : '';\r
+
+      \r
+
+      const bodyHash     = CryptoJS.SHA256(body).toString(CryptoJS.enc.Hex);\r
+
+      const stringToSign = [method, timestamp, nonce, path, bodyHash].join('\\n');\r
+
+      const signature    = CryptoJS.HmacSHA256(stringToSign, secretKey).toString(CryptoJS.enc.Hex);\r
+
+      \r
+
+      pm.request.headers.upsert({ key: 'X-Api-Key',   value: apiKey });\r
+
+      pm.request.headers.upsert({ key: 'X-Timestamp', value: timestamp });\r
+
+      pm.request.headers.upsert({ key: 'X-Nonce',     value: nonce });\r
+
+      pm.request.headers.upsert({ key: 'X-Signature', value: signature });\r\n"

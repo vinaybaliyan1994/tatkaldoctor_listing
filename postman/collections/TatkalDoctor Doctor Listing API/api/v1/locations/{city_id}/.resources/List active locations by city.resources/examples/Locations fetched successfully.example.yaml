@@ -1,0 +1,37 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/locations/:city_id"
+  method: GET
+  headers:
+    - key: Accept
+      value: application/json
+    - key: X-Api-Key
+      value: <API Key>
+      description: "Added as a part of security scheme: apikey"
+  pathVariables:
+    - key: city_id
+      value: "1"
+      description: ID of the city (from /cities/{country_code})
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "message": "Locations fetched successfully",
+        "data": [
+          {
+            "id": 1,
+            "location": "Andheri West"
+          },
+          {
+            "id": 1,
+            "location": "Andheri West"
+          }
+        ]
+      }
+order: 1000

@@ -1,0 +1,27 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/listings/slug/:qrSlug"
+  method: GET
+  headers:
+    - key: Accept
+      value: application/json
+    - key: X-Api-Key
+      value: <API Key>
+      description: "Added as a part of security scheme: apikey"
+  pathVariables:
+    - key: qrSlug
+      value: dr-ravi-kumar-550e8400
+      description: Unique QR slug generated when a listing is approved (e.g. dr-ravi-kumar-550e8400)
+response:
+  statusCode: 401
+  statusText: Unauthorized
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "success": false,
+        "message": "Error message describing what went wrong"
+      }
+order: 2000

@@ -1,0 +1,16 @@
+$kind: http-request
+description: Authenticates a super_admin, admin, or user and returns a Sanctum Bearer token.
+url: "{{baseUrl}}/api/v1/login"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "superadmin@tatkaldoctor.com",
+      "password": "Admin@1234"
+    }
+examples: ./.resources/Admin login.resources/examples
+order: 1000

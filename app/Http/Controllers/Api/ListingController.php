@@ -103,9 +103,7 @@ class ListingController extends Controller
             'per_page'            => 'nullable|integer|min:1|max:100',
         ]);
 
-        $query = Listing::with(['country', 'city', 'location'])
-            ->where('status', true)
-            ->where('verification_status', 'approved');
+        $query = Listing::with(['country', 'city', 'location'])->public();
 
         if (! empty($validated['country_code'])) {
             $query->where('country_code', $validated['country_code']);
@@ -127,7 +125,11 @@ class ListingController extends Controller
             $search = $validated['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('hospital_name', 'like', "%{$search}%");
+                    ->orWhere('hospital_name', 'like', "%{$search}%")
+                    ->orWhere('address', 'like', "%{$search}%")
+                    ->orWhere('meta_data->speciality', 'like', "%{$search}%")
+                    ->orWhere('meta_data->city_name', 'like', "%{$search}%")
+                    ->orWhere('meta_data->location_name', 'like', "%{$search}%");
             });
         }
 
@@ -148,6 +150,59 @@ class ListingController extends Controller
     }
 
     // ─── Show by QR slug ──────────────────────────────────────────────────────
+
+    public function resolve(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['nullable', 'email', 'max:191', 'required_without:phone'],
+            'phone' => ['nullable', 'string', 'max:20', 'required_without:email'],
+        ]);
+
+        $email = isset($validated['email']) ? strtolower(trim($validated['email'])) : null;
+        $phone = isset($validated['phone']) ? preg_replace('/\D+/', '', $validated['phone']) : null;
+
+        $query = Listing::with(['country', 'city', 'location'])
+            ->where('status', true)
+            ->where('verification_status', 'approved')
+            ->where(function ($q) use ($email, $phone): void {
+                if ($email) {
+                    $q->orWhereRaw('LOWER(email) = ?', [$email]);
+                }
+
+                if ($phone) {
+                    $q->orWhere('personal_contact_no', $phone)
+                        ->orWhere('appointment_no', $phone);
+                }
+            });
+
+        $duplicateCount = (clone $query)->count();
+
+        $listing = $query
+            ->orderByRaw("CASE WHEN source = 'solution_registration' THEN 0 ELSE 1 END")
+            ->orderByDesc('verified_at')
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if (! $listing) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No approved active listing found for exact email/mobile.',
+            ], 404);
+        }
+
+        $data = (new ListingDetailResource($listing))->resolve($request);
+        $data['email'] = $listing->email;
+        $data['source'] = $listing->source;
+        $data['verified_at'] = $listing->verified_at?->toIso8601String();
+        $data['duplicate_count'] = $duplicateCount;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Listing resolved successfully.',
+            'data' => $data,
+        ]);
+    }
 
     #[OA\Get(
         path: '/api/v1/listings/slug/{qrSlug}',
@@ -201,8 +256,7 @@ class ListingController extends Controller
     {
         $listing = Listing::with(['country', 'city', 'location'])
             ->where('qr_slug', $qrSlug)
-            ->where('status', true)
-            ->where('verification_status', 'approved')
+            ->public()
             ->first();
 
         if (! $listing) {
@@ -273,8 +327,7 @@ class ListingController extends Controller
     {
         $listing = Listing::with(['country', 'city', 'location'])
             ->where('uuid', $uuid)
-            ->where('status', true)
-            ->where('verification_status', 'approved')
+            ->public()
             ->first();
 
         if (! $listing) {

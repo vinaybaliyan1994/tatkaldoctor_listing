@@ -1,0 +1,14 @@
+$kind: http-request
+description: Returns all settings flagged as public as a flat key → value object. Useful for configuring client apps (e.g. site name, support contact, feature flags). Requires HMAC authentication.
+url: "{{baseUrl}}/api/v1/settings/public"
+method: GET
+headers:
+  Accept: application/json
+auth:
+  type: apikey
+  credentials:
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    in: header
+examples: ./.resources/Get public platform settings.resources/examples
+order: 1000

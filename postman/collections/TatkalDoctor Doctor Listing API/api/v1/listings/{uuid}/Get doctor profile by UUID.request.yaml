@@ -1,0 +1,20 @@
+$kind: http-request
+name: Get doctor profile by UUID
+description: Returns a full active, verified doctor profile by its UUID. The response includes all profile fields, contact details, qualifications, services and QR data. Requires HMAC authentication.
+url: |
+  {{baseUrl}}/api/v1/listings/:uuid
+method: GET
+headers:
+  Accept: application/json
+pathVariables:
+  - key: |
+      uuid
+    value: d60fea83-0a1c-4758-8e45-ae06c28f4f2e
+auth:
+  type: apikey
+  credentials:
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    in: header
+examples: ./.resources/Get doctor profile by UUID.resources/examples
+order: 1000

@@ -3,6 +3,10 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\ListingController;
+use App\Http\Controllers\Api\ListingCreateController;
+use App\Http\Controllers\Api\ListingDocumentController;
+use App\Http\Controllers\Api\ListingIntakeController;
+use App\Http\Controllers\Api\ListingWhatsAppQrController;
 use App\Http\Controllers\Api\MasterDataController;
 use Illuminate\Support\Facades\Route;
 
@@ -31,8 +35,16 @@ Route::prefix('v1')->group(function () {
         Route::get('settings/public',             [MasterDataController::class, 'publicSettings']);
 
         // Doctor listings
-        Route::get('listings/search',             [ListingController::class, 'search']);
-        Route::get('listings/slug/{qrSlug}',      [ListingController::class, 'showBySlug']);
-        Route::get('listings/{uuid}',             [ListingController::class, 'show']);
+        Route::post('listings',                                [ListingCreateController::class, 'store']);
+        Route::post('listings/intake',                         [ListingIntakeController::class, 'store']);
+        Route::patch('listings/{uuid}',                        [ListingIntakeController::class, 'update']);
+        Route::get('listings/search',                          [ListingController::class, 'search']);
+        Route::get('listings/resolve',                         [ListingController::class, 'resolve']);
+        Route::get('listings/slug/{qrSlug}',                   [ListingController::class, 'showBySlug']);
+        Route::get('listings/{uuid}/documents',                [ListingDocumentController::class, 'index']);
+        Route::post('listings/{uuid}/documents',               [ListingDocumentController::class, 'store']);
+        Route::post('listings/{uuid}/profile-photo',           [ListingDocumentController::class, 'updateProfilePhoto']);
+        Route::post('listings/{uuid}/whatsapp-qr',             [ListingWhatsAppQrController::class, 'generate']);
+        Route::get('listings/{uuid}',                          [ListingController::class, 'show']);
     });
 });

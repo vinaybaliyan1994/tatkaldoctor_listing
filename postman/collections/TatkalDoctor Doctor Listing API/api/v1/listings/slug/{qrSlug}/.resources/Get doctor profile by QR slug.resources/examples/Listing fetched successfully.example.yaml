@@ -1,0 +1,53 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/listings/slug/:qrSlug"
+  method: GET
+  headers:
+    - key: Accept
+      value: application/json
+    - key: X-Api-Key
+      value: <API Key>
+      description: "Added as a part of security scheme: apikey"
+  pathVariables:
+    - key: qrSlug
+      value: dr-ravi-kumar-550e8400
+      description: Unique QR slug generated when a listing is approved (e.g. dr-ravi-kumar-550e8400)
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "message": "Listing fetched successfully",
+        "data": {
+          "uuid": "550e8400-e29b-41d4-a716-446655440000",
+          "name": "Dr. Ravi Kumar",
+          "hospital_name": "City General Hospital",
+          "address": "123 MG Road, Mumbai",
+          "description": "Experienced cardiologist with 15+ years practice.",
+          "country": "India",
+          "city": "Mumbai",
+          "location": "Andheri",
+          "personal_contact_no": "+91 9000000000",
+          "appointment_no": "+91 9000000001",
+          "qualifications": [
+            "MBBS",
+            "MD — Cardiology"
+          ],
+          "services": [
+            "Cardiology",
+            "Interventional Cardiology"
+          ],
+          "latitude": 19.076,
+          "longitude": 72.8777,
+          "average_rating": 4.8,
+          "status": true,
+          "qr_slug": "dr-ravi-kumar-550e8400",
+          "public_profile_url": "https://tatkaldoctors.com/d/dr-ravi-kumar-550e8400"
+        }
+      }
+order: 1000

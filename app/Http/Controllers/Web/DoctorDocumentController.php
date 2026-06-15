@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DoctorDocument;
 use App\Models\Listing;
 use App\Services\ListingAuditService;
+use App\Services\SolutionSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,16 +17,23 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DoctorDocumentController extends Controller
 {
-    public function __construct(private readonly ListingAuditService $audit) {}
+    public function __construct(
+        private readonly ListingAuditService $audit,
+        private readonly SolutionSyncService $solutionSync,
+    ) {}
 
     public function index(Listing $listing): View
     {
-        $documents = $listing->doctorDocuments()
+        abort_unless(Auth::user()?->isAdmin(), 403);
+
+        $documentListing = $this->documentSourceListingFor($listing);
+
+        $documents = $documentListing->documents()
             ->with('verifiedBy')
             ->latest()
             ->get();
 
-        return view('doctor-documents.index', compact('listing', 'documents'));
+        return view('doctor-documents.index', compact('listing', 'documentListing', 'documents'));
     }
 
     public function create(Listing $listing): View
@@ -76,6 +84,8 @@ class DoctorDocumentController extends Controller
 
     public function show(DoctorDocument $doctorDocument): View
     {
+        abort_unless(Auth::user()?->isAdmin(), 403);
+
         $doctorDocument->load(['listing', 'verifiedBy']);
 
         return view('doctor-documents.show', compact('doctorDocument'));
@@ -107,8 +117,8 @@ class DoctorDocumentController extends Controller
             $doctorDocument->verified_by = Auth::id();
             $doctorDocument->remarks     = $validated['remarks'] ?? null;
         } elseif ($newStatus === 'rejected') {
-            $doctorDocument->verified_at = null;
-            $doctorDocument->verified_by = null;
+            $doctorDocument->verified_at = now();
+            $doctorDocument->verified_by = Auth::id();
             $doctorDocument->remarks     = $validated['remarks'];
         } else {
             $doctorDocument->verified_at = null;
@@ -132,12 +142,22 @@ class DoctorDocumentController extends Controller
             $validated['remarks'] ?? null
         );
 
+        if ($oldStatus !== $newStatus) {
+            $this->solutionSync->syncListing($doctorDocument->listing, 'document.status_changed');
+        }
+
+        if ($request->input('redirect_to') === 'listing_documents') {
+            return redirect()->to(route('listings.show', $doctorDocument->listing) . '#documents')
+                ->with('success', 'Document status updated.');
+        }
+
         return redirect()->route('doctor-documents.show', $doctorDocument)
             ->with('success', 'Document status updated.');
     }
 
     public function download(DoctorDocument $doctorDocument): StreamedResponse
     {
+        abort_unless(Auth::user()?->isAdmin(), 403);
         abort_unless(Storage::disk('public')->exists($doctorDocument->file_path), 404);
 
         return Storage::disk('public')->download(
@@ -167,5 +187,33 @@ class DoctorDocumentController extends Controller
 
         return redirect()->route('doctor-documents.index', $listingId)
             ->with('success', 'Document deleted.');
+    }
+
+    private function documentSourceListingFor(Listing $listing): Listing
+    {
+        if ($listing->documents()->exists()) {
+            return $listing;
+        }
+
+        if (! $listing->email || ! $listing->personal_contact_no || ! $listing->name) {
+            return $listing;
+        }
+
+        $documentListing = Listing::query()
+            ->withCount([
+                'documents',
+                'documents as pending_documents_count' => fn ($query) => $query->where('status', 'pending'),
+            ])
+            ->whereRaw('LOWER(email) = ?', [strtolower($listing->email)])
+            ->where('personal_contact_no', $listing->personal_contact_no)
+            ->whereRaw('LOWER(name) = ?', [strtolower($listing->name)])
+            ->orderByDesc('pending_documents_count')
+            ->orderByDesc('documents_count')
+            ->orderByDesc('id')
+            ->first();
+
+        return $documentListing && ($documentListing->documents_count ?? 0) > 0
+            ? $documentListing
+            : $listing;
     }
 }

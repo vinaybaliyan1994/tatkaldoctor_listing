@@ -1,0 +1,45 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/listings/search?country_code=IND&master_city_id=1&master_location_id=1&service_id=1&search=Ravi&per_page=20&page=1"
+  method: GET
+  headers:
+    - key: Accept
+      value: application/json
+    - key: X-Api-Key
+      value: <API Key>
+      description: "Added as a part of security scheme: apikey"
+  queryParams:
+    - key: country_code
+      value: IND
+      description: Filter by ISO alpha-3 country code
+    - key: master_city_id
+      value: "1"
+      description: Filter by city ID (from /cities/{country_code})
+    - key: master_location_id
+      value: "1"
+      description: Filter by location ID (from /locations/{city_id})
+    - key: service_id
+      value: "1"
+      description: Filter by service ID (from /services). Matches both parent and child services.
+    - key: search
+      value: Ravi
+      description: Free-text search on doctor name or hospital name
+    - key: per_page
+      value: "20"
+      description: Results per page (1–100, default 20)
+    - key: page
+      value: "1"
+      description: Page number (default 1)
+response:
+  statusCode: 422
+  statusText: Unprocessable Entity (WebDAV) (RFC 4918)
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "success": false,
+        "message": "Error message describing what went wrong"
+      }
+order: 3000

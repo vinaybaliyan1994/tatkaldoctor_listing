@@ -1,0 +1,14 @@
+$kind: http-request
+description: Returns all countries available on the platform, sorted A→Z. Requires HMAC authentication.
+url: "{{baseUrl}}/api/v1/countries"
+method: GET
+headers:
+  Accept: application/json
+auth:
+  type: apikey
+  credentials:
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    in: header
+examples: ./.resources/List all countries.resources/examples
+order: 1000

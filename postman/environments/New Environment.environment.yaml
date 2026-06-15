@@ -1,0 +1,8 @@
+name: New Environment
+values:
+  - key: api_key
+    value: ''
+  - key: secret_key
+    value: ''
+  - key: ''
+    value: ''

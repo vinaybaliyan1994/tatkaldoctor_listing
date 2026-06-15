@@ -1,0 +1,14 @@
+$kind: http-request
+description: Returns all active parent services with their active child (sub) services, sorted A→Z. Use service IDs to filter doctor listings. Requires HMAC authentication.
+url: "{{baseUrl}}/api/v1/services"
+method: GET
+headers:
+  Accept: application/json
+auth:
+  type: apikey
+  credentials:
+    key: X-Api-Key
+    value: "{{apiKey}}"
+    in: header
+examples: ./.resources/List active services with sub-services.resources/examples
+order: 1000

@@ -6,12 +6,12 @@
 
 <div class="flex items-center justify-between mb-6">
     <div>
-        <h1 class="text-2xl font-bold text-gray-800">Client Subscriptions</h1>
-        <p class="text-gray-500 text-sm mt-1">All client plan subscriptions on the platform.</p>
+        <h1 class="text-2xl font-bold text-slate-800">Client Subscriptions</h1>
+        <p class="text-slate-500 text-sm mt-1">All client plan subscriptions on the platform.</p>
     </div>
     @if (Auth::user()->isSuperAdmin())
     <a href="{{ route('client-subscriptions.create') }}"
-       class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+       class="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-xl transition-colors">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
         </svg>
@@ -23,12 +23,12 @@
 @include('partials.alerts')
 
 <form method="GET" action="{{ route('client-subscriptions.index') }}"
-      class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-5 flex flex-wrap items-end gap-3">
+      class="bg-white rounded-xl border border-slate-100 shadow-sm p-4 mb-5 flex flex-wrap items-end gap-3">
 
     <div class="min-w-40">
-        <label class="block text-xs font-medium text-gray-500 mb-1">Plan</label>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Plan</label>
         <select name="plan_id"
-                class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400 transition">
             <option value="">All Plans</option>
             @foreach ($plans as $plan)
                 <option value="{{ $plan->id }}" {{ request('plan_id') == $plan->id ? 'selected' : '' }}>
@@ -39,9 +39,9 @@
     </div>
 
     <div>
-        <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Status</label>
         <select name="status"
-                class="px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                class="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400 transition">
             <option value="">All</option>
             <option value="active"    {{ request('status') === 'active'    ? 'selected' : '' }}>Active</option>
             <option value="pending"   {{ request('status') === 'pending'   ? 'selected' : '' }}>Pending</option>
@@ -51,9 +51,9 @@
     </div>
 
     <div>
-        <label class="block text-xs font-medium text-gray-500 mb-1">Payment</label>
+        <label class="block text-xs font-medium text-slate-500 mb-1">Payment</label>
         <select name="payment_status"
-                class="px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                class="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400 transition">
             <option value="">All</option>
             <option value="free"   {{ request('payment_status') === 'free'   ? 'selected' : '' }}>Free</option>
             <option value="paid"   {{ request('payment_status') === 'paid'   ? 'selected' : '' }}>Paid</option>
@@ -63,69 +63,69 @@
     </div>
 
     <div>
-        <label class="block text-xs font-medium text-gray-500 mb-1">From</label>
+        <label class="block text-xs font-medium text-slate-500 mb-1">From</label>
         <input type="date" name="date_from" value="{{ request('date_from') }}"
-               class="px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+               class="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400 transition">
     </div>
 
     <div>
-        <label class="block text-xs font-medium text-gray-500 mb-1">To</label>
+        <label class="block text-xs font-medium text-slate-500 mb-1">To</label>
         <input type="date" name="date_to" value="{{ request('date_to') }}"
-               class="px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+               class="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400 transition">
     </div>
 
     <div class="flex items-center gap-2">
         <button type="submit"
-                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-xl transition-colors">
             Filter
         </button>
         @if (request()->hasAny(['plan_id', 'status', 'payment_status', 'date_from', 'date_to']))
         <a href="{{ route('client-subscriptions.index') }}"
-           class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-600 text-sm font-medium rounded-lg transition-colors">
+           class="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-medium rounded-xl transition-colors">
             Clear
         </a>
         @endif
     </div>
 </form>
 
-<div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+<div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
     @if ($subscriptions->isEmpty())
-        <div class="text-center py-16 text-gray-400">
+        <div class="text-center py-16 text-slate-400">
             <p class="text-sm">No subscriptions found.</p>
         </div>
     @else
         <div class="overflow-x-auto">
         <table class="w-full text-sm">
-            <thead class="bg-gray-50 border-b border-gray-200">
+            <thead class="bg-slate-50 border-b border-slate-100">
                 <tr>
-                    <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">#</th>
-                    <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Client</th>
-                    <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Plan</th>
-                    <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Period</th>
-                    <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Amount</th>
-                    <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-                    <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Payment</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">#</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Client</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Plan</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Period</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Amount</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Payment</th>
                     <th class="px-4 py-3 w-28"></th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
+            <tbody class="divide-y divide-slate-100">
                 @foreach ($subscriptions as $sub)
-                <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-4 py-3 text-gray-400 text-xs">{{ $sub->id }}</td>
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-4 py-3 text-slate-400 text-xs">{{ $sub->id }}</td>
                     <td class="px-4 py-3">
-                        <p class="font-medium text-gray-800">{{ $sub->client->name }}</p>
-                        <p class="text-xs text-gray-400 font-mono">{{ $sub->client->api_key }}</p>
+                        <p class="font-medium text-slate-800">{{ $sub->client->name }}</p>
+                        <p class="text-xs text-slate-400 font-mono">{{ $sub->client->api_key }}</p>
                     </td>
-                    <td class="px-4 py-3 text-gray-700">{{ $sub->plan->name }}</td>
-                    <td class="px-4 py-3 text-xs text-gray-600">
+                    <td class="px-4 py-3 text-slate-700">{{ $sub->plan->name }}</td>
+                    <td class="px-4 py-3 text-xs text-slate-600">
                         <div>{{ $sub->start_date->format('d M Y') }}</div>
                         @if ($sub->end_date)
-                        <div class="text-gray-400">→ {{ $sub->end_date->format('d M Y') }}</div>
+                        <div class="text-slate-400">→ {{ $sub->end_date->format('d M Y') }}</div>
                         @else
-                        <div class="text-gray-400">→ No end</div>
+                        <div class="text-slate-400">→ No end</div>
                         @endif
                     </td>
-                    <td class="px-4 py-3 font-semibold text-gray-800">
+                    <td class="px-4 py-3 font-semibold text-slate-800">
                         @if ($sub->amount == 0)
                             <span class="text-green-600 text-xs">Free</span>
                         @else
@@ -137,11 +137,11 @@
                             $statusColors = [
                                 'active'    => 'bg-green-100 text-green-700',
                                 'pending'   => 'bg-amber-100 text-amber-700',
-                                'expired'   => 'bg-gray-100 text-gray-500',
+                                'expired'   => 'bg-slate-100 text-slate-500',
                                 'cancelled' => 'bg-red-100 text-red-600',
                             ];
                         @endphp
-                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$sub->status] ?? 'bg-gray-100 text-gray-500' }}">
+                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$sub->status] ?? 'bg-slate-100 text-slate-500' }}">
                             {{ ucfirst($sub->status) }}
                         </span>
                     </td>
@@ -149,19 +149,19 @@
                         @php
                             $payColors = [
                                 'free'   => 'bg-green-100 text-green-700',
-                                'paid'   => 'bg-blue-100 text-blue-700',
+                                'paid'   => 'bg-teal-100 text-teal-700',
                                 'unpaid' => 'bg-amber-100 text-amber-700',
                                 'failed' => 'bg-red-100 text-red-600',
                             ];
                         @endphp
-                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium {{ $payColors[$sub->payment_status] ?? 'bg-gray-100 text-gray-500' }}">
+                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium {{ $payColors[$sub->payment_status] ?? 'bg-slate-100 text-slate-500' }}">
                             {{ ucfirst($sub->payment_status) }}
                         </span>
                     </td>
                     <td class="px-4 py-3 text-right">
                         <div class="flex items-center justify-end gap-2">
                             <a href="{{ route('client-subscriptions.show', $sub) }}"
-                               class="text-xs text-blue-600 hover:text-blue-800 font-medium">View</a>
+                               class="text-xs text-teal-600 hover:text-teal-800 font-medium">View</a>
                             @if (Auth::user()->isSuperAdmin())
                             <a href="{{ route('client-subscriptions.edit', $sub) }}"
                                class="text-xs text-amber-600 hover:text-amber-800 font-medium">Edit</a>
@@ -180,7 +180,7 @@
         </div>
 
         @if ($subscriptions->hasPages())
-        <div class="px-4 py-4 border-t border-gray-100">
+        <div class="px-4 py-4 border-t border-slate-100">
             {{ $subscriptions->links() }}
         </div>
         @endif

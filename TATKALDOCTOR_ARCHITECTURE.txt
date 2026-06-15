@@ -1,0 +1,730 @@
+================================================================================
+         TATKALDOCTOR ECOSYSTEM — COMPLETE ARCHITECTURE & WORKFLOW
+================================================================================
+Document Date : 2026-06-10
+Prepared For  : TatkalDoctor Development Team
+================================================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 1 : ECOSYSTEM OVERVIEW — 4 PROJECTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  The TatkalDoctor platform is made up of 4 separate projects that work together:
+
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │                                                                         │
+  │   PROJECT 1  →  Doctor Listing      (Admin Backend / Core Registry)    │
+  │   PROJECT 2  →  Solutions           (Client App / Booking System)      │
+  │   PROJECT 3  →  WhatsApp            (WhatsApp Chatbot / Integration)   │
+  │   PROJECT 4  →  Public Website      (tatkaldoctors.com / Doctor Pages) │
+  │                                                                         │
+  └─────────────────────────────────────────────────────────────────────────┘
+
+  HOW THEY CONNECT:
+
+  ┌──────────────────┐      HMAC API      ┌─────────────────────┐
+  │                  │ ◄─────────────────► │                     │
+  │  Doctor Listing  │                     │    Solutions App    │
+  │  (Core Backend)  │ ◄─────────────────► │                     │
+  │                  │      HMAC API      └─────────────────────┘
+  │  Issues:         │
+  │  - API Keys      │      HMAC API      ┌─────────────────────┐
+  │  - Secret Keys   │ ◄─────────────────► │                     │
+  │  - Doctor Data   │                     │   WhatsApp Bot      │
+  │  - QR Slugs      │                     │                     │
+  │                  │                     └─────────────────────┘
+  │                  │
+  │                  │      QR Slug/URL   ┌─────────────────────┐
+  │                  │ ──────────────────► │                     │
+  │                  │                     │  Public Website     │
+  └──────────────────┘                     │  tatkaldoctors.com  │
+                                           └─────────────────────┘
+
+  KEY PRINCIPLE:
+  - Doctor Listing is the SINGLE SOURCE OF TRUTH for all doctor data.
+  - All other 3 projects are CONSUMERS of the Doctor Listing API.
+  - No project can modify doctor data directly — only Doctor Listing admin can.
+  - All API access is secured with HMAC-SHA256 authentication.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 2 : PROJECT 1 — DOCTOR LISTING (ADMIN BACKEND)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  URL         : http://127.0.0.1:8000  (local)
+  Framework   : Laravel 12.x
+  PHP         : 8.2
+  Database    : MySQL
+  Auth (Web)  : Session-based (email + password)
+  Auth (API)  : HMAC-SHA256 + Sanctum Bearer Token
+
+  PURPOSE:
+  The core admin backend. Super admins and admins manage all doctor listings,
+  verify documents, issue API credentials to client applications, and configure
+  the platform. This project exposes a REST API that all 3 other projects use.
+
+  ─────────────────────────────────────────────────────────────────────────────
+  2.1  USER ROLES
+  ─────────────────────────────────────────────────────────────────────────────
+
+    ROLE          PERMISSIONS
+    ──────────    ─────────────────────────────────────────────────────────────
+    super_admin   Full access — create/edit/delete everything including clients,
+                  master data, settings, subscription plans
+    admin         Can manage listings, approve/reject documents, generate QR codes
+    user          Read-only access to listings and documents
+
+  ─────────────────────────────────────────────────────────────────────────────
+  2.2  DATABASE TABLES (14 tables)
+  ─────────────────────────────────────────────────────────────────────────────
+
+    TABLE                   PURPOSE
+    ──────────────────────  ─────────────────────────────────────────────────
+    users                   Admin/staff accounts (roles: super_admin/admin/user)
+    clients                 API client apps (api_key + encrypted secret_key)
+    client_subscriptions    Which plan each client is subscribed to
+    subscription_plans      Free/Starter/Professional/Enterprise tiers
+    master_countries        Country list (ISO alpha-3 codes e.g. IND, USA)
+    master_cities           Cities per country (with active/inactive status)
+    master_locations        Localities within a city
+    master_qualifications   Medical degrees (MBBS, MD, BDS, etc.)
+    master_services         Medical specialties, parent+child hierarchy
+    listings                Core doctor profiles (all doctor data)
+    doctor_documents        Uploaded verification documents per doctor
+    listing_audit_logs      Full audit trail of every listing change
+    settings                Platform configuration (public + private settings)
+    api_logs                Log of every HMAC API request made by clients
+
+  ─────────────────────────────────────────────────────────────────────────────
+  2.3  DOCTOR LISTING — DATA FIELDS
+  ─────────────────────────────────────────────────────────────────────────────
+
+    FIELD               TYPE      DESCRIPTION
+    ──────────────────  ────────  ───────────────────────────────────────────
+    uuid                string    Unique public identifier (used in API URLs)
+    name                string    Doctor's full name
+    hospital_name       string    Hospital / clinic name
+    address             string    Full address
+    description         text      About / bio
+    country_code        FK        Country (ISO alpha-3)
+    master_city_id      FK        City reference
+    master_location_id  FK        Locality reference
+    personal_contact_no string    Doctor's personal phone
+    appointment_no      string    Appointment booking phone
+    qualifications      JSON      Array of qualification IDs
+    services            JSON      Array of service IDs
+    latitude/longitude  decimal   GPS coordinates
+    average_rating      decimal   Rating (0.00 – 5.00)
+    status              boolean   Active = visible via API
+    verification_status enum      pending / approved / rejected
+    verified_at         datetime  When approved
+    verified_by         FK        Which admin approved
+    rejection_reason    text      Why rejected
+    qr_slug             string    URL-friendly slug (e.g. dr-ravi-kumar-d60fea83)
+    public_profile_url  string    Full public URL on tatkaldoctors.com
+    qr_code_path        string    Path to generated QR image file
+    profile_photo_path  string    Path to doctor's profile photo
+
+  ─────────────────────────────────────────────────────────────────────────────
+  2.4  LISTING LIFECYCLE / WORKFLOW
+  ─────────────────────────────────────────────────────────────────────────────
+
+    STEP 1 — CREATE
+      Admin creates a new doctor listing with basic info (name, location,
+      qualifications, services, contact details).
+      → verification_status = "pending"
+      → status = false (not visible via API)
+
+    STEP 2 — DOCUMENT UPLOAD
+      Admin uploads verification documents:
+        - Aadhaar Card
+        - PAN Card
+        - Medical Registration Certificate
+        - Degree Certificate
+        - Clinic License
+        - Other (custom)
+      Documents go through their own pending/approved/rejected workflow.
+
+    STEP 3 — VERIFICATION
+      Admin or super_admin reviews documents and either:
+        APPROVE → verification_status = "approved"
+                  status = true (now visible via API)
+                  verified_at = now()
+                  verified_by = current admin
+        REJECT  → verification_status = "rejected"
+                  rejection_reason = filled in
+
+    STEP 4 — QR CODE GENERATION
+      After approval, admin clicks "Generate QR".
+        → qr_slug is generated: "{name-slug}-{first-8-chars-of-uuid}"
+        → public_profile_url: "https://tatkaldoctors.com/d/{qr_slug}"
+        → QR code image is generated and saved
+
+    STEP 5 — LIVE ON API
+      Listing is now:
+        - Searchable via GET /api/v1/listings/search
+        - Accessible by UUID via GET /api/v1/listings/{uuid}
+        - Accessible by QR slug via GET /api/v1/listings/slug/{qrSlug}
+
+    STEP 6 — AUDIT LOG
+      Every create/edit/approve/reject/QR action is logged in
+      listing_audit_logs with: action, old values, new values,
+      admin who made the change, IP address, timestamp.
+
+  ─────────────────────────────────────────────────────────────────────────────
+  2.5  WEB ADMIN PANEL — ALL PAGES
+  ─────────────────────────────────────────────────────────────────────────────
+
+    URL                         PAGE
+    ──────────────────────────  ─────────────────────────────────────────────
+    /login                      Login page
+    /dashboard                  Dashboard
+    /listings                   All doctor listings (filterable)
+    /listings/{id}              Doctor listing detail + actions
+    /listings/{id}/documents    Documents for a listing
+    /documents/{id}             Document detail + approve/reject
+    /listing-audit-logs         Audit trail of all listing changes
+    /clients                    API client applications
+    /clients/{id}               Client detail (API key visible here)
+    /api-logs                   API request logs (filterable)
+    /subscription-plans         Subscription plan list
+    /client-subscriptions       Client subscription management
+    /settings                   Platform settings
+    /master-countries           Country master data
+    /master-cities              City master data
+    /master-locations           Location master data
+    /master-qualifications      Qualification master data
+    /master-services            Service master data
+
+  ─────────────────────────────────────────────────────────────────────────────
+  2.6  REST API — ALL ENDPOINTS
+  ─────────────────────────────────────────────────────────────────────────────
+
+    METHOD  ENDPOINT                          AUTH    DESCRIPTION
+    ──────  ────────────────────────────────  ──────  ─────────────────────────
+    GET     /api/v1/health                    None    Health check
+    POST    /api/v1/login                     None    Admin login (Sanctum token)
+    GET     /api/v1/countries                 HMAC    List all countries
+    GET     /api/v1/cities/{country_code}     HMAC    Cities by country
+    GET     /api/v1/locations/{city_id}       HMAC    Locations by city
+    GET     /api/v1/services                  HMAC    Services with sub-services
+    GET     /api/v1/qualifications            HMAC    Medical qualifications
+    GET     /api/v1/settings/public           HMAC    Public platform settings
+    GET     /api/v1/listings/search           HMAC    Search doctors (paginated)
+    GET     /api/v1/listings/slug/{qrSlug}    HMAC    Doctor profile by QR slug
+    GET     /api/v1/listings/{uuid}           HMAC    Doctor profile by UUID
+    GET     /api/v1/listings/{uuid}/documents HMAC    List doctor's documents
+    POST    /api/v1/listings/{uuid}/documents HMAC    Upload document
+    POST    /api/v1/listings/{uuid}/photo     HMAC    Upload profile photo
+
+  ─────────────────────────────────────────────────────────────────────────────
+  2.7  HMAC AUTHENTICATION — HOW IT WORKS
+  ─────────────────────────────────────────────────────────────────────────────
+
+    WHAT IS HMAC?
+    HMAC (Hash-based Message Authentication Code) is a method to prove that
+    a request is coming from a trusted client and hasn't been tampered with.
+
+    SETUP (one time):
+      1. Super admin creates a "Client" in the admin panel (/clients/create)
+      2. System auto-generates: API Key (32-char hex) + Secret Key (64-char hex)
+      3. Secret Key is shown ONLY ONCE — client must save it immediately
+      4. Secret Key is stored encrypted in the database
+
+    EVERY API REQUEST FLOW:
+      Client Side (Solutions/WhatsApp/Public Website):
+        1. Take: METHOD + TIMESTAMP + NONCE + PATH + SHA256(body)
+        2. Join them with newline (\n) character
+        3. Sign the string using HMAC-SHA256 with the secret key
+        4. Send 4 headers with every request:
+             X-Api-Key    → the API key
+             X-Timestamp  → current Unix timestamp (seconds)
+             X-Nonce      → random unique string (min 8 chars)
+             X-Signature  → the HMAC-SHA256 hex signature
+
+      Server Side (Doctor Listing):
+        1. Check all 4 headers present
+        2. Check timestamp is within ±5 minutes of server time
+        3. Check nonce hasn't been used before (replay attack prevention)
+        4. Look up client by API key
+        5. Rebuild the same string → compute HMAC → compare
+        6. If matches → allow request
+        7. If fails  → return 401 Unauthorized
+        8. Log the request to api_logs table
+
+    STRING TO SIGN FORMAT:
+      GET\n
+      1749290000\n
+      abc12345xyz\n
+      /api/v1/listings/search\n
+      e3b0c44298fc1c149afbf4c8996fb924...  (SHA256 of empty body for GET)
+
+  ─────────────────────────────────────────────────────────────────────────────
+  2.8  SUBSCRIPTION PLANS
+  ─────────────────────────────────────────────────────────────────────────────
+
+    PLAN         PRICE       DURATION   STAFF   LOCATIONS   APPOINTMENTS
+    ───────────  ──────────  ─────────  ──────  ──────────  ────────────
+    Free         ₹0/month    365 days   1       1           Unlimited
+    Starter      ₹499/month  30 days    3       2           100/month
+    Professional ₹1499/month 30 days    10      5           500/month
+    Enterprise   ₹4999/month 30 days    ∞       ∞           ∞
+
+  ─────────────────────────────────────────────────────────────────────────────
+  2.9  DEFAULT SEEDED DATA
+  ─────────────────────────────────────────────────────────────────────────────
+
+    Super Admin Login:
+      Email    : superadmin@tatkaldoctor.com
+      Password : Admin@1234
+
+    Countries: India (IND)
+
+    Qualifications (10):
+      MBBS, MD, MS, BDS, MDS, BAMS, BHMS, DNB, DM, MCh
+
+    Services (12 parent categories):
+      General Physician, Cardiologist, Dermatologist, Orthopedic,
+      Pediatrician, Gynecologist, Neurologist, Psychiatrist,
+      Ophthalmologist, ENT Specialist, Dentist, Urologist
+
+    Settings:
+      site_name         = TatkalDoctor
+      site_tagline      = Find Doctors Near You
+      support_email     = support@tatkaldoctor.com
+      primary_color     = #2563eb
+      timezone          = Asia/Kolkata
+      api_rate_limit    = 100 requests/window
+      hmac_tolerance    = 300 seconds (5 minutes)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 3 : PROJECT 2 — SOLUTIONS (CLIENT APP / BOOKING SYSTEM)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Session Cookie : tatkaldoctor-solution-session
+  Framework      : Laravel (separate codebase)
+  Database       : Own database (booking data, patients, appointments)
+  API Consumer   : Calls Doctor Listing API using HMAC authentication
+
+  PURPOSE:
+  The Solutions project is the main clinic/hospital management application.
+  It is used by healthcare providers (clinics, hospitals) to:
+    - Search and find verified doctors from the Doctor Listing registry
+    - Manage patient appointments and bookings
+    - Manage their own staff, locations, and schedules
+    - Access subscription-based features per their plan tier
+
+  ─────────────────────────────────────────────────────────────────────────────
+  3.1  HOW SOLUTIONS USES DOCTOR LISTING API
+  ─────────────────────────────────────────────────────────────────────────────
+
+    STEP 1 — Get API Credentials
+      Admin of Solutions creates an account → requests API access
+      Doctor Listing super admin creates a Client entry and provides:
+        - API Key
+        - Secret Key
+
+    STEP 2 — Set Up HMAC Headers
+      Solutions backend generates HMAC signature for every API request:
+        X-Api-Key    : {api_key}
+        X-Timestamp  : {current_unix_timestamp}
+        X-Nonce      : {random_unique_string}
+        X-Signature  : {hmac_sha256_signature}
+
+    STEP 3 — Fetch Master Data (on app load / cache)
+      GET /api/v1/countries          → populate country dropdown
+      GET /api/v1/cities/IND         → populate city dropdown
+      GET /api/v1/locations/{city}   → populate locality dropdown
+      GET /api/v1/services           → populate specialty filter
+      GET /api/v1/qualifications     → populate qualification filter
+      GET /api/v1/settings/public    → get platform config
+
+    STEP 4 — Search Doctors
+      GET /api/v1/listings/search?country_code=IND&master_city_id=1
+                                    &service_id=2&search=ravi&page=1
+
+      Response:
+        {
+          "success": true,
+          "data": [
+            {
+              "uuid": "d60fea83-...",
+              "name": "Dr. Ravi Kumar",
+              "hospital_name": "City Hospital",
+              "city": "Mumbai",
+              "location": "Andheri",
+              "average_rating": 4.8
+            }
+          ],
+          "pagination": { "current_page": 1, "total": 50, "per_page": 20 }
+        }
+
+    STEP 5 — View Doctor Profile
+      GET /api/v1/listings/{uuid}
+      → Returns full profile: address, contact, qualifications, services,
+        GPS coordinates, QR slug, public profile URL, rating
+
+    STEP 6 — Book Appointment (Solutions own feature)
+      Patient selects doctor → Solutions creates appointment in its own DB
+      Appointment linked to doctor's UUID from Doctor Listing
+
+  ─────────────────────────────────────────────────────────────────────────────
+  3.2  SOLUTIONS OWN FEATURES (separate from Doctor Listing)
+  ─────────────────────────────────────────────────────────────────────────────
+
+    - Patient registration and management
+    - Appointment scheduling and calendar
+    - Staff management (up to plan limit)
+    - Multi-location support (up to plan limit)
+    - Billing and invoicing
+    - WhatsApp booking integration (via WhatsApp project)
+    - Reports and analytics
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 4 : PROJECT 3 — WHATSAPP (CHATBOT / INTEGRATION)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Session Cookie : tatkaldoctor-whatsapp-session
+  Framework      : Laravel (separate codebase)
+  Integration    : WhatsApp Business API / Twilio / Meta Cloud API
+  API Consumer   : Calls Doctor Listing API using HMAC authentication
+
+  PURPOSE:
+  Allows patients to find doctors and book appointments directly via WhatsApp
+  without installing any app. Also sends automated notifications (appointment
+  reminders, confirmations) to patients and doctors.
+
+  ─────────────────────────────────────────────────────────────────────────────
+  4.1  HOW WHATSAPP BOT WORKS
+  ─────────────────────────────────────────────────────────────────────────────
+
+    PATIENT SENDS MESSAGE:
+      "Find cardiologist in Mumbai"
+                ↓
+    WHATSAPP PROJECT:
+      1. Parses intent (service type = cardiologist, city = Mumbai)
+      2. Calls Doctor Listing API:
+           GET /api/v1/listings/search
+               ?master_city_id=1&service_id=2
+         (using its own HMAC credentials)
+      3. Formats doctor list into WhatsApp message
+      4. Sends formatted list back to patient
+                ↓
+    PATIENT SELECTS DOCTOR:
+      "Book appointment with Dr. Ravi Kumar"
+                ↓
+    WHATSAPP PROJECT:
+      1. Calls GET /api/v1/listings/{uuid} for full profile
+      2. Gets appointment_no from doctor profile
+      3. Shows booking details / initiates booking flow in Solutions app
+      4. Sends confirmation message to patient
+
+  ─────────────────────────────────────────────────────────────────────────────
+  4.2  WHATSAPP NOTIFICATION TYPES
+  ─────────────────────────────────────────────────────────────────────────────
+
+    - Appointment confirmation to patient
+    - Appointment reminder (24 hours before)
+    - Doctor profile shared via QR code link
+    - Appointment cancellation notice
+    - New appointment alert to clinic/doctor
+
+  ─────────────────────────────────────────────────────────────────────────────
+  4.3  PLATFORM SETTINGS USED
+  ─────────────────────────────────────────────────────────────────────────────
+
+    From Doctor Listing settings:
+      whatsapp_no   → The business WhatsApp number
+      site_name     → TatkalDoctor (used in message templates)
+      support_email → For escalation messages
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 5 : PROJECT 4 — PUBLIC WEBSITE (tatkaldoctors.com)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  URL            : https://tatkaldoctors.com
+  Framework      : Laravel / Next.js / Nuxt.js (separate codebase)
+  API Consumer   : Calls Doctor Listing API using HMAC authentication
+
+  PURPOSE:
+  The public-facing website that anyone can visit to search for doctors,
+  view doctor profiles, and scan QR codes. This is what patients see.
+
+  ─────────────────────────────────────────────────────────────────────────────
+  5.1  DOCTOR PROFILE PAGE (QR Code Target)
+  ─────────────────────────────────────────────────────────────────────────────
+
+    URL Pattern:  https://tatkaldoctors.com/d/{qr_slug}
+    Example:      https://tatkaldoctors.com/d/dr-ravi-kumar-d60fea83
+
+    WHAT HAPPENS WHEN PATIENT SCANS QR CODE:
+      1. Patient scans QR code on doctor's visiting card / clinic wall
+      2. Browser opens: https://tatkaldoctors.com/d/dr-ravi-kumar-d60fea83
+      3. Public website calls Doctor Listing API:
+           GET /api/v1/listings/slug/dr-ravi-kumar-d60fea83
+         (using its own HMAC credentials)
+      4. Doctor's full profile is displayed:
+           - Doctor name and photo
+           - Hospital name and address
+           - Qualifications
+           - Services offered
+           - Contact numbers
+           - Location on map (latitude/longitude)
+           - Rating
+
+    PATIENT CAN:
+      - View full doctor profile
+      - Click appointment number to call
+      - Share the profile link
+      - Book appointment (redirects to Solutions app)
+
+  ─────────────────────────────────────────────────────────────────────────────
+  5.2  SEARCH FEATURE
+  ─────────────────────────────────────────────────────────────────────────────
+
+    Patient visits tatkaldoctors.com → searches for doctors
+
+    SEARCH FLOW:
+      1. Patient selects: City + Specialty (service) + Name/keyword
+      2. Website calls:
+           GET /api/v1/listings/search
+               ?master_city_id=1&service_id=2&search=ravi&per_page=20
+      3. Results displayed as cards
+      4. Patient clicks doctor → profile page opens
+         (either by UUID or QR slug)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 6 : COMPLETE SYSTEM WORKFLOW — END TO END
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ─────────────────────────────────────────────────────────────────────────────
+  6.1  DOCTOR ONBOARDING FLOW
+  ─────────────────────────────────────────────────────────────────────────────
+
+    DOCTOR/CLINIC                ADMIN PANEL                   SYSTEM
+    ─────────────                ───────────                   ──────
+    Applies to list    →→→→→→   Admin creates listing
+                                  (name, city, services,
+                                   qualifications, contact)
+                                        ↓
+    Submits documents  →→→→→→   Admin uploads to system
+    (physical or email)         (Aadhaar, PAN, Degree,
+                                 Medical Registration,
+                                 Clinic License)
+                                        ↓
+                                Admin reviews documents
+                                        ↓
+                            ┌───── APPROVE ──────┐
+                            │                    │
+                            ↓                    ↓  REJECT
+                     Listing activated     Rejection reason
+                     status = true         sent to doctor
+                     verification_status
+                     = approved
+                            ↓
+                     Admin generates QR
+                            ↓
+                     QR slug created           →→→→  Doctor receives
+                     QR image generated              QR code image
+                     Public URL assigned             to print/display
+                            ↓
+                     Doctor now searchable
+                     on all 3 client apps
+
+  ─────────────────────────────────────────────────────────────────────────────
+  6.2  PATIENT FINDING A DOCTOR (via Public Website)
+  ─────────────────────────────────────────────────────────────────────────────
+
+    PATIENT                   PUBLIC WEBSITE               DOCTOR LISTING API
+    ───────                   ──────────────               ──────────────────
+    Opens tatkaldoctors.com
+    Selects: Mumbai / Cardiology
+                    →→→→→  GET /api/v1/listings/search
+                               ?city=1&service=2     →→→→  Returns paginated
+                                                           doctor list
+                    ←←←←←  Shows doctor cards    ←←←←←
+    Clicks Dr. Ravi Kumar
+                    →→→→→  GET /api/v1/listings/{uuid}
+                                                   →→→→  Returns full profile
+                    ←←←←←  Shows full profile    ←←←←←
+    Calls appointment number directly
+
+  ─────────────────────────────────────────────────────────────────────────────
+  6.3  PATIENT FINDING A DOCTOR (via QR Code Scan)
+  ─────────────────────────────────────────────────────────────────────────────
+
+    PATIENT                   PUBLIC WEBSITE               DOCTOR LISTING API
+    ───────                   ──────────────               ──────────────────
+    Scans QR code at clinic
+    Opens tatkaldoctors.com/d/dr-ravi-kumar-d60fea83
+                    →→→→→  GET /api/v1/listings/slug/
+                               dr-ravi-kumar-d60fea83 →→→→  Returns full profile
+                    ←←←←←  Shows doctor profile     ←←←←←
+    Books or calls directly
+
+  ─────────────────────────────────────────────────────────────────────────────
+  6.4  PATIENT BOOKING VIA WHATSAPP
+  ─────────────────────────────────────────────────────────────────────────────
+
+    PATIENT              WHATSAPP BOT          DOCTOR LISTING API   SOLUTIONS
+    ───────              ────────────          ──────────────────   ─────────
+    Sends message:
+    "Cardiologist
+     in Mumbai"
+           ↓
+    Bot parses:
+    city=Mumbai,
+    service=Cardiology
+                  →→→→  GET /api/v1/
+                         listings/search
+                         ?city=1&service=2  →→→→  Returns list
+                  ←←←←  Formats and sends ←←←←
+                         doctor list
+    Patient replies:
+    "Book Ravi Kumar"
+                  →→→→  GET /api/v1/        →→→→  Returns
+                         listings/{uuid}          full profile
+                         (gets appt. no.)
+                                      →→→→→→→→→→  Creates appointment
+                                                   in Solutions DB
+                  ←←←←  Sends booking ←←←←←←←←
+                         confirmation
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 7 : API SECURITY ARCHITECTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Each of the 3 client projects (Solutions, WhatsApp, Public Website) gets its
+  OWN API key and secret key from the Doctor Listing admin panel.
+
+  SECURITY LAYERS:
+
+    Layer 1 — API Key Identification
+      Each request carries X-Api-Key identifying which client app is calling.
+      Invalid key → 401 "Invalid API key"
+
+    Layer 2 — Timestamp Validation (Replay Attack Prevention)
+      X-Timestamp must be within ±5 minutes of server time.
+      Expired timestamp → 401 "Timestamp outside acceptable window"
+
+    Layer 3 — Nonce (One-Time Token)
+      X-Nonce is a random string, stored in cache for 5 minutes.
+      If same nonce sent twice → 401 "Nonce already used"
+      This prevents an attacker from copying and replaying a valid request.
+
+    Layer 4 — HMAC Signature
+      X-Signature = HMAC-SHA256(METHOD+TIMESTAMP+NONCE+PATH+BODY, secret_key)
+      Server re-computes same signature and compares.
+      Tampered request → signature won't match → 401 "Invalid HMAC signature"
+
+    Layer 5 — Client Active Status
+      Client can be deactivated from admin panel instantly.
+      Inactive client → 401 "Client is inactive"
+
+    Layer 6 — Date-based Availability Window
+      Clients can have avail_from_date and avail_to_date limits.
+      Outside window → 401 "Client is inactive or outside availability period"
+
+    Layer 7 — Full Audit Logging
+      Every API request (success and failure) is logged in api_logs table.
+      Admin can monitor all API usage from /api-logs page.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 8 : INFRASTRUCTURE / DEPLOYMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  LOCAL DEVELOPMENT:
+    Server      : WAMP64 (Windows, Apache, MySQL, PHP)
+    Doctor Listing URL : http://127.0.0.1:8000
+    PHP Version : 8.2
+    Laravel     : 12.x
+
+  PRODUCTION (EXPECTED):
+    Doctor Listing   : api.tatkaldoctor.com  (or similar)
+    Solutions        : app.tatkaldoctor.com
+    WhatsApp Bot     : Hosted service + webhook URL
+    Public Website   : tatkaldoctors.com
+
+  SESSIONS:
+    Doctor Listing  → tatkaldoctor-session
+    Solutions       → tatkaldoctor-solution-session
+    WhatsApp        → tatkaldoctor-whatsapp-session
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 9 : QUICK REFERENCE — WHO USES WHAT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  WHO             USES                    HOW
+  ────────────    ─────────────────────   ────────────────────────────────────
+  Super Admin     Doctor Listing Panel    Session login, full control
+  Admin           Doctor Listing Panel    Session login, manage listings/docs
+  User (staff)    Doctor Listing Panel    Session login, read-only
+  Solutions App   Doctor Listing API      HMAC headers, own API key
+  WhatsApp Bot    Doctor Listing API      HMAC headers, own API key
+  Public Website  Doctor Listing API      HMAC headers, own API key
+  Patient         Public Website          No auth, just browse
+  Patient         WhatsApp               Chat interface
+  Patient         QR Code → tatkaldoctors.com  Just scan and view
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 10 : IMPORTANT TECHNICAL NOTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. SECRET KEY IS SHOWN ONLY ONCE
+     When creating a client, the secret key is shown once after creation.
+     It is stored encrypted in the DB. If lost → must use "Regenerate Keys".
+
+  2. QR SLUG FORMAT
+     Format: {doctor-name-slug}-{first-8-chars-of-uuid}
+     Example: dr-ravi-kumar-d60fea83
+     Once generated, this becomes the permanent public URL identifier.
+
+  3. LISTING VISIBILITY RULES
+     A doctor listing is visible via API only when BOTH:
+       - status = true (active)
+       - verification_status = "approved"
+     Pending or rejected listings are NEVER returned by the API.
+
+  4. SERVICES ARE HIERARCHICAL
+     Each service has parent_id. Child services belong to parent.
+     Example:
+       Cardiology (parent, id=2)
+         └── Interventional Cardiology (child, parent_id=2)
+         └── Cardiac Electrophysiology (child, parent_id=2)
+     Searching by parent service_id returns doctors with any child service too.
+
+  5. QUALIFICATIONS & SERVICES STORED AS JSON IDs
+     listings.qualifications = [1, 3, 5] (array of qualification IDs)
+     listings.services = [2, 7] (array of service IDs)
+     The API resolves these IDs to names in the response.
+
+  6. PROFILE PHOTO
+     Stored at: storage/app/public/profile-photos/{uuid}.{ext}
+     Accessible via public URL after php artisan storage:link
+
+  7. AUDIT LOG IS AUTOMATIC
+     Every listing change creates a record in listing_audit_logs.
+     Tracks: what changed, old value, new value, who changed it, when, IP.
+
+  8. API LOGS FOR MONITORING
+     Every HMAC API request is logged. Admins can see:
+       - Which client made the request
+       - Which endpoint was hit
+       - Success/failure
+       - IP address
+       - Timestamp
+     Access via: /api-logs in admin panel
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                              END OF DOCUMENT
+================================================================================

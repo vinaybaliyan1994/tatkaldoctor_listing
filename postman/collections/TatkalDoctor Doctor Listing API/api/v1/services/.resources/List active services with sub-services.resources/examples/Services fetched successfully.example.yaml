@@ -1,0 +1,53 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/services"
+  method: GET
+  headers:
+    - key: Accept
+      value: application/json
+    - key: X-Api-Key
+      value: <API Key>
+      description: "Added as a part of security scheme: apikey"
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "message": "Services fetched successfully",
+        "data": [
+          {
+            "id": 1,
+            "service": "Cardiology",
+            "children": [
+              {
+                "id": 5,
+                "service": "Interventional Cardiology"
+              },
+              {
+                "id": 5,
+                "service": "Interventional Cardiology"
+              }
+            ]
+          },
+          {
+            "id": 1,
+            "service": "Cardiology",
+            "children": [
+              {
+                "id": 5,
+                "service": "Interventional Cardiology"
+              },
+              {
+                "id": 5,
+                "service": "Interventional Cardiology"
+              }
+            ]
+          }
+        ]
+      }
+order: 1000

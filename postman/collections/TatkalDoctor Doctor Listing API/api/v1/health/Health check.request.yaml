@@ -1,0 +1,8 @@
+$kind: http-request
+description: Returns the current health status of the API. No authentication required.
+url: "{{baseUrl}}/api/v1/health"
+method: GET
+headers:
+  Accept: application/json
+examples: ./.resources/Health check.resources/examples
+order: 1000

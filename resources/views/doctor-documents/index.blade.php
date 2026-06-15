@@ -4,26 +4,30 @@
 
 @section('content')
 
+@php
+    $documentListing = $documentListing ?? $listing;
+@endphp
+
 <div class="flex items-center justify-between mb-6">
-    <div class="flex items-center gap-2 text-sm text-gray-500">
-        <a href="{{ route('listings.index') }}" class="hover:text-gray-700">Listings</a>
+    <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="{{ route('listings.index') }}" class="hover:text-slate-700">Listings</a>
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
         </svg>
-        <a href="{{ route('listings.show', $listing) }}" class="hover:text-gray-700 truncate max-w-xs">{{ $listing->name }}</a>
+        <a href="{{ route('listings.show', $listing) }}" class="hover:text-slate-700 truncate max-w-xs">{{ $listing->name }}</a>
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
         </svg>
-        <span class="text-gray-800 font-medium">Documents</span>
+        <span class="text-slate-800 font-medium">Documents</span>
     </div>
     <div class="flex items-center gap-2">
-        <a href="{{ route('listings.show', $listing) }}"
-           class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg transition-colors">
+        <a href="{{ route('listings.show', $listing) }}#documents"
+           class="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-xl transition-colors">
             ← Back
         </a>
         @if (Auth::user()->isAdmin())
-        <a href="{{ route('doctor-documents.create', $listing) }}"
-           class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+        <a href="{{ route('doctor-documents.create', $documentListing) }}"
+           class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-xl transition-colors">
             + Upload Document
         </a>
         @endif
@@ -32,14 +36,20 @@
 
 @include('partials.alerts')
 
-<div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-    <div class="p-5 border-b border-gray-100 flex items-center justify-between">
-        <h2 class="font-semibold text-gray-800">Documents for {{ $listing->name }}</h2>
-        <span class="text-sm text-gray-500">{{ $documents->count() }} document(s)</span>
+<div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+    <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+        <h2 class="font-semibold text-slate-800">Documents for {{ $listing->name }}</h2>
+        <span class="text-sm text-slate-500">{{ $documents->count() }} document(s)</span>
     </div>
 
+    @if ($documentListing->id !== $listing->id)
+        <div class="mx-5 mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+            Documents are attached to duplicate listing #{{ $documentListing->id }}. Review actions below update those document records.
+        </div>
+    @endif
+
     @if ($documents->isEmpty())
-        <div class="p-10 text-center text-gray-400">
+        <div class="p-10 text-center text-slate-400">
             <svg class="w-10 h-10 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
@@ -49,7 +59,7 @@
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead>
-                <tr class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <tr class="bg-slate-50 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
                     <th class="px-5 py-3">Type</th>
                     <th class="px-5 py-3">File</th>
                     <th class="px-5 py-3">Size</th>
@@ -59,12 +69,12 @@
                     <th class="px-5 py-3">Actions</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
+            <tbody class="divide-y divide-slate-100">
                 @foreach ($documents as $doc)
-                <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-5 py-3 font-medium text-gray-800">{{ $doc->document_type_label }}</td>
-                    <td class="px-5 py-3 text-gray-600 max-w-xs truncate">{{ $doc->original_name ?? basename($doc->file_path) }}</td>
-                    <td class="px-5 py-3 text-gray-500">
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-5 py-3 font-medium text-slate-800">{{ $doc->document_type_label }}</td>
+                    <td class="px-5 py-3 text-slate-600 max-w-xs truncate">{{ $doc->original_name ?? basename($doc->file_path) }}</td>
+                    <td class="px-5 py-3 text-slate-500">
                         {{ $doc->file_size ? number_format($doc->file_size / 1024, 1) . ' KB' : '—' }}
                     </td>
                     <td class="px-5 py-3">
@@ -82,17 +92,17 @@
                             </span>
                         @endif
                     </td>
-                    <td class="px-5 py-3 text-gray-600">{{ $doc->verifiedBy?->name ?? '—' }}</td>
-                    <td class="px-5 py-3 text-gray-500">{{ $doc->created_at->format('d M Y') }}</td>
+                    <td class="px-5 py-3 text-slate-600">{{ $doc->verifiedBy?->name ?? '—' }}</td>
+                    <td class="px-5 py-3 text-slate-500">{{ $doc->created_at->format('d M Y') }}</td>
                     <td class="px-5 py-3">
                         <div class="flex items-center gap-2">
                             <a href="{{ route('doctor-documents.show', $doc) }}"
-                               class="text-xs text-blue-600 hover:text-blue-800 font-medium">View</a>
+                               class="text-xs text-teal-600 hover:text-teal-800 font-medium">View</a>
                             @if (Auth::user()->isAdmin())
                             <a href="{{ route('doctor-documents.verify', $doc) }}"
                                class="text-xs text-amber-600 hover:text-amber-800 font-medium">Verify</a>
                             <a href="{{ route('doctor-documents.download', $doc) }}"
-                               class="text-xs text-gray-600 hover:text-gray-800 font-medium">Download</a>
+                               class="text-xs text-slate-600 hover:text-slate-800 font-medium">Download</a>
                             <form method="POST" action="{{ route('doctor-documents.destroy', $doc) }}"
                                   onsubmit="return confirm('Delete this document?')">
                                 @csrf @method('DELETE')

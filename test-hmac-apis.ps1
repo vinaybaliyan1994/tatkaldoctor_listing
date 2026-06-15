@@ -212,6 +212,56 @@ function Skip-EndpointTest {
     $script:results.Add(@{ Name = $Name; Status = "SKIP" })
 }
 
+function Invoke-PostTest {
+    param (
+        [string]$Name,
+        [string]$SignPath,
+        [hashtable]$BodyData,
+        [int]$ExpectStatus = 201
+    )
+
+    $bodyJson = $BodyData | ConvertTo-Json -Compress
+    $headers  = New-HmacHeaders -Method "POST" -SignPath $SignPath `
+                                -ApiKey $API_KEY -SecretKey $SECRET_KEY -Body $bodyJson
+    $headers["Content-Type"] = "application/json"
+
+    $url = $BASE_URL + $SignPath
+
+    Write-Host ""
+    Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
+    Write-Host ("  [{0:D2}] {1}" -f ($script:results.Count + 1), $Name) -ForegroundColor Cyan
+    Write-Host "  URL  : $url"
+    Write-Host "  BODY : $bodyJson"
+
+    try {
+        $resp = Invoke-RestMethod -Method POST -Uri $url -Headers $headers `
+                                  -Body $bodyJson -ErrorAction Stop
+
+        $script:results.Add(@{ Name = $Name; Status = "PASS" })
+        Write-Host "  STATUS  : PASS" -ForegroundColor Green
+        Write-Host "  success : $($resp.success)"
+        Write-Host "  message : $($resp.message)"
+        if ($resp.data) {
+            Write-Host "  data    : $($resp.data | ConvertTo-Json -Compress)"
+        }
+    } catch {
+        $script:results.Add(@{ Name = $Name; Status = "FAIL" })
+        Write-Host "  STATUS : FAIL" -ForegroundColor Red
+
+        $errDetail = ""
+        try {
+            if ($_.Exception.Response) {
+                $stream    = $_.Exception.Response.GetResponseStream()
+                $reader    = New-Object System.IO.StreamReader($stream)
+                $errDetail = $reader.ReadToEnd()
+            } else {
+                $errDetail = $_.Exception.Message
+            }
+        } catch { $errDetail = $_.Exception.Message }
+        Write-Host "  Error  : $errDetail" -ForegroundColor Red
+    }
+}
+
 # ------------------------------------------------------------------------------
 # Test Suite
 # ------------------------------------------------------------------------------
@@ -282,6 +332,26 @@ if ($LISTING_QR_SLUG) {
         -SignPath  "/api/v1/listings/slug/$LISTING_QR_SLUG"
 } else {
     Skip-EndpointTest -Name "GET /api/v1/listings/slug/{qrSlug}" -Reason "no qr_slug on any approved listing (approve a listing and click Generate QR first)"
+}
+
+# 10. Intake — doctor self-registration submitted by Solution
+if ($CITY_ID) {
+    Invoke-PostTest `
+        -Name      "POST /api/v1/listings/intake (solution registration)" `
+        -SignPath   "/api/v1/listings/intake" `
+        -BodyData   @{
+            doctor_name         = "Dr. Test Intake"
+            email               = "test.intake@example.com"
+            mobile              = "+91 98000 00001"
+            clinic_name         = "Test Clinic"
+            address             = "123 Test Street, Test Nagar"
+            city_id             = [int]$CITY_ID
+            registration_number = "REG-TEST-001"
+            services            = @()
+            qualifications      = @()
+        }
+} else {
+    Skip-EndpointTest -Name "POST /api/v1/listings/intake" -Reason "no active city in DB"
 }
 
 # ------------------------------------------------------------------------------

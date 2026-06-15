@@ -1,182 +1,139 @@
 @extends('layouts.app')
 
-@section('title', 'Login — TatkalDoctor Admin')
+@section('title', 'Login - TatkalDoctor Listing Admin')
 
 @section('content')
-<div class="min-h-screen flex">
+<div class="min-h-screen grid lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,0.65fr)] bg-[radial-gradient(circle_at_top_left,_#dbeafe,_transparent_34%),linear-gradient(135deg,_#f8fafc_0%,_#eff6ff_45%,_#ecfdf5_100%)]">
 
-    {{-- Left panel --}}
-    <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 flex-col justify-between p-12">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
-                <svg class="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-            </div>
-            <span class="text-white text-xl font-bold tracking-wide">TatkalDoctor</span>
-        </div>
-
+    <section class="hidden lg:flex flex-col justify-between px-12 py-10 bg-gradient-to-br from-blue-700 via-blue-800 to-emerald-700 text-white">
         <div>
-            <h1 class="text-4xl font-bold text-white leading-snug mb-4">
-                Doctor Listing<br>Management Portal
-            </h1>
-            <p class="text-blue-200 text-lg">
-                Manage doctors, specializations, hospitals and API clients from a single admin panel.
-            </p>
+            <img src="{{ asset('assets/brand/tatkaldoctor-logo.png') }}"
+                 alt="TatkalDoctor"
+                 class="h-16 w-auto brightness-0 invert">
+        </div>
 
-            <div class="mt-10 space-y-4">
-                @foreach ([
-                    ['icon' => 'M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2', 'text' => 'Manage Doctor Profiles'],
-                    ['icon' => 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', 'text' => 'Manage Hospitals & Clinics'],
-                    ['icon' => 'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z', 'text' => 'Control API Client Access'],
-                ] as $item)
-                <div class="flex items-center gap-3 text-blue-100">
-                    <div class="w-8 h-8 rounded-lg bg-blue-500 bg-opacity-50 flex items-center justify-center flex-shrink-0">
-                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}"/>
-                        </svg>
-                    </div>
-                    <span class="text-sm font-medium">{{ $item['text'] }}</span>
-                </div>
-                @endforeach
+        <div class="max-w-xl">
+            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-100">Listing Admin</p>
+            <h1 class="mt-4 text-4xl font-bold leading-tight">Manage verified doctor listings with cleaner controls and faster review flow.</h1>
+            <div class="mt-8 grid grid-cols-1 gap-3 text-sm text-blue-50">
+                <div class="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">Approve and maintain doctor profiles</div>
+                <div class="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">Manage cities, locations, services and qualifications</div>
+                <div class="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">Sync approved profiles back to TatkalDoctor Solution</div>
             </div>
         </div>
 
-        <p class="text-blue-300 text-sm">© {{ date('Y') }} TatkalDoctor. All rights reserved.</p>
-    </div>
+        <p class="text-sm text-blue-100">&copy; {{ date('Y') }} TatkalDoctor. All rights reserved.</p>
+    </section>
 
-    {{-- Right panel — login form --}}
-    <div class="flex-1 flex items-center justify-center p-6 sm:p-12">
+    <section class="flex min-h-screen items-center justify-center px-4 py-10 sm:px-8">
         <div class="w-full max-w-md">
-
-            {{-- Mobile logo --}}
-            <div class="lg:hidden flex items-center gap-2 mb-8">
-                <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                </div>
-                <span class="text-blue-700 text-lg font-bold">TatkalDoctor</span>
+            <div class="mb-7 text-center lg:hidden">
+                <img src="{{ asset('assets/brand/tatkaldoctor-logo.png') }}"
+                     alt="TatkalDoctor"
+                     class="mx-auto h-16 w-auto">
+                <p class="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-teal-600">Listing Admin</p>
             </div>
 
-            <h2 class="text-3xl font-bold text-gray-800 mb-1">Welcome back</h2>
-            <p class="text-gray-500 mb-8 text-sm">Sign in to your admin account</p>
+            <div class="hidden lg:block mb-7">
+                <img src="{{ asset('assets/brand/tatkaldoctor-logo.png') }}"
+                     alt="TatkalDoctor"
+                     class="h-14 w-auto">
+                <p class="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-teal-600">Listing Admin</p>
+            </div>
 
-            {{-- Session / validation errors --}}
-            @if (session('status'))
-                <div class="mb-5 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
-                    {{ session('status') }}
-                </div>
-            @endif
+            <div class="overflow-hidden rounded-3xl border border-white/70 bg-white/95 shadow-2xl shadow-blue-900/10 backdrop-blur">
+                <div class="px-6 py-7 sm:px-8 sm:py-8">
+                    <h2 class="text-2xl font-bold text-slate-900">Welcome back</h2>
+                    <p class="mt-1 text-sm text-slate-500">Sign in to the doctor listing admin portal.</p>
 
-            @if ($errors->any())
-                <div class="mb-5 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                    <ul class="list-disc list-inside space-y-1">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
+                    @if (session('status'))
+                        <div class="mt-6 rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
+                            {{ session('status') }}
+                        </div>
+                    @endif
 
-            <form method="POST" action="{{ route('login.post') }}" class="space-y-5">
-                @csrf
+                    @if ($errors->any())
+                        <div class="mt-6 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                            <ul class="list-disc list-inside space-y-1">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
 
-                {{-- Email --}}
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
-                        Email address
-                    </label>
-                    <input
-                        id="email"
-                        name="email"
-                        type="email"
-                        autocomplete="email"
-                        autofocus
-                        value="{{ old('email') }}"
-                        placeholder="admin@example.com"
-                        class="w-full px-4 py-2.5 rounded-lg border
-                               @error('email') border-red-400 bg-red-50 @else border-gray-300 @enderror
-                               text-gray-900 text-sm placeholder-gray-400
-                               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                               transition"
-                    >
-                </div>
+                    <form method="POST" action="{{ route('login.post') }}" class="mt-6 space-y-5">
+                        @csrf
 
-                {{-- Password --}}
-                <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
-                        Password
-                    </label>
-                    <div class="relative">
-                        <input
-                            id="password"
-                            name="password"
-                            type="password"
-                            autocomplete="current-password"
-                            placeholder="••••••••"
-                            class="w-full px-4 py-2.5 pr-10 rounded-lg border border-gray-300
-                                   text-gray-900 text-sm placeholder-gray-400
-                                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                                   transition"
-                        >
-                        <button type="button" onclick="togglePassword()"
-                                class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600">
-                            <svg id="eye-icon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                            </svg>
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-slate-700 mb-1.5">Email address</label>
+                            <input id="email"
+                                   name="email"
+                                   type="email"
+                                   autocomplete="email"
+                                   autofocus
+                                   value="{{ old('email') }}"
+                                   placeholder="admin@example.com"
+                                   class="w-full rounded-xl border px-4 py-3 text-sm text-slate-900 placeholder-slate-400 transition
+                                          focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400
+                                          @error('email') border-red-400 bg-red-50 @else border-slate-200 bg-slate-50 @enderror">
+                        </div>
+
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
+                            <div class="relative">
+                                <input id="password"
+                                       name="password"
+                                       type="password"
+                                       autocomplete="current-password"
+                                       placeholder="Password"
+                                       class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 pr-11 text-sm text-slate-900 placeholder-slate-400 transition
+                                              focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400">
+                                <button type="button" onclick="togglePassword()"
+                                        class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-600"
+                                        aria-label="Toggle password visibility">
+                                    <svg id="eye-icon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center">
+                            <input id="remember" name="remember" type="checkbox"
+                                   class="h-4 w-4 rounded border-slate-200 text-teal-600 focus:ring-teal-500">
+                            <label for="remember" class="ml-2 text-sm text-slate-600">Keep me signed in</label>
+                        </div>
+
+                        <button type="submit"
+                                class="w-full rounded-xl bg-teal-600 px-4 py-3 text-sm font-semibold text-white transition
+                                       hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
+                            Sign in
                         </button>
-                    </div>
+                    </form>
                 </div>
-
-                {{-- Remember me --}}
-                <div class="flex items-center">
-                    <input id="remember" name="remember" type="checkbox"
-                           class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                    <label for="remember" class="ml-2 text-sm text-gray-600">Keep me signed in</label>
+                <div class="border-t border-slate-100 bg-slate-50 px-8 py-4 text-center">
+                    <p class="text-xs text-slate-400">Authorised TatkalDoctor personnel only</p>
                 </div>
-
-                {{-- Submit --}}
-                <button type="submit"
-                        class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800
-                               text-white font-semibold rounded-lg text-sm
-                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-                               transition-colors duration-150">
-                    Sign in
-                </button>
-            </form>
-
-            <p class="mt-8 text-center text-xs text-gray-400">
-                TatkalDoctor Admin Panel &mdash; Authorised personnel only
-            </p>
+            </div>
         </div>
-    </div>
+    </section>
 </div>
 @endsection
 
 @push('scripts')
 <script>
     function togglePassword() {
-        const input   = document.getElementById('password');
-        const icon    = document.getElementById('eye-icon');
-        const isText  = input.type === 'text';
-        input.type    = isText ? 'password' : 'text';
+        const input = document.getElementById('password');
+        const icon = document.getElementById('eye-icon');
+        const isText = input.type === 'text';
+        input.type = isText ? 'password' : 'text';
         icon.innerHTML = isText
-            ? `<path stroke-linecap="round" stroke-linejoin="round"
-                     d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-               <path stroke-linecap="round" stroke-linejoin="round"
-                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`
-            : `<path stroke-linecap="round" stroke-linejoin="round"
-                     d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7
-                        a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878
-                        l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59
-                        m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7
-                        a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>`;
+            ? `<path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+               <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`
+            : `<path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18M10.584 10.587a2 2 0 002.828 2.826"/>
+               <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 4.879A9.97 9.97 0 0112 4.65c4.478 0 8.268 2.943 9.542 7a10.042 10.042 0 01-4.046 5.161M6.228 6.228A10.043 10.043 0 002.458 11.65c1.274 4.057 5.064 7 9.542 7 1.1 0 2.15-.178 3.13-.506"/>`;
     }
 </script>
 @endpush
